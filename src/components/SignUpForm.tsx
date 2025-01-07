@@ -14,6 +14,7 @@ const AVAILABLE_TAGS = [
 ];
 
 export const SignUpForm = () => {
+  const [step, setStep] = useState(1);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
@@ -49,6 +50,18 @@ export const SignUpForm = () => {
     }
   };
 
+  const handleNextStep = () => {
+    if (!name || !email) {
+      toast({
+        title: "Missing Information",
+        description: "Please fill in all fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    setStep(2);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (skills.length !== 5 || interests.length !== 5) {
@@ -59,7 +72,6 @@ export const SignUpForm = () => {
       });
       return;
     }
-    // For now, we'll just store in localStorage
     localStorage.setItem("user", JSON.stringify({ name, email, skills, interests }));
     toast({
       title: "Profile Created!",
@@ -68,29 +80,39 @@ export const SignUpForm = () => {
     navigate("/dashboard");
   };
 
+  if (step === 1) {
+    return (
+      <form onSubmit={(e) => { e.preventDefault(); handleNextStep(); }} className="space-y-8 max-w-md mx-auto">
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
+          <Input
+            id="name"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+        </div>
+        
+        <div className="space-y-2">
+          <Label htmlFor="email">Email</Label>
+          <Input
+            id="email"
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </div>
+
+        <Button type="submit" className="w-full">
+          Next Step
+        </Button>
+      </form>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-8 max-w-md mx-auto">
-      <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
-        <Input
-          id="name"
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-      </div>
-      
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </div>
-
       <div className="space-y-2">
         <Label>Skills (Select 5)</Label>
         <div className="flex flex-wrap gap-2">
@@ -123,9 +145,14 @@ export const SignUpForm = () => {
         </div>
       </div>
 
-      <Button type="submit" className="w-full">
-        Create Profile
-      </Button>
+      <div className="space-x-4">
+        <Button type="button" variant="outline" onClick={() => setStep(1)} className="w-1/3">
+          Back
+        </Button>
+        <Button type="submit" className="w-2/3">
+          Create Profile
+        </Button>
+      </div>
     </form>
   );
 };
