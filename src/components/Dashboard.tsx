@@ -9,13 +9,28 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface User {
   name: string;
   email: string;
   skills: string[];
   interests: string[];
+  linkedinProfile?: string;
+  eventId: string;
+  event?: {
+    id: string;
+    name: string;
+    date: string;
+  };
 }
+
+// Mock events data
+const MOCK_EVENTS = [
+  { id: "1", name: "Tech Conference 2024", date: "2024-06-15" },
+  { id: "2", name: "Business Summit", date: "2024-07-01" },
+  { id: "3", name: "Startup Meetup", date: "2024-05-20" },
+];
 
 // Mock data for demonstration
 const MOCK_USERS: User[] = [
@@ -24,17 +39,22 @@ const MOCK_USERS: User[] = [
     email: "alice@example.com",
     skills: ["Programming", "Design", "Marketing", "Project Management", "Writing"],
     interests: ["Leadership", "Public Speaking", "Finance", "Sales", "Data Analysis"],
+    eventId: "1",
+    linkedinProfile: "Senior Software Engineer with 5+ years of experience...",
   },
   {
     name: "Bob Smith",
     email: "bob@example.com",
     skills: ["Leadership", "Sales", "Networking", "Public Speaking", "Event Planning"],
     interests: ["Programming", "Design", "Data Analysis", "Writing", "Marketing"],
+    eventId: "1",
+    linkedinProfile: "Business Development Manager specializing in...",
   },
 ];
 
 export const Dashboard = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<string>("");
   const [matches, setMatches] = useState<Array<{ user: User; score: number }>>([]);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [sentRequests, setSentRequests] = useState<string[]>([]);
@@ -44,7 +64,9 @@ export const Dashboard = () => {
     const userData = localStorage.getItem("user");
     const savedRequests = localStorage.getItem("sentRequests");
     if (userData) {
-      setCurrentUser(JSON.parse(userData));
+      const user = JSON.parse(userData);
+      setCurrentUser(user);
+      setSelectedEvent(user.eventId);
     }
     if (savedRequests) {
       setSentRequests(JSON.parse(savedRequests));
@@ -52,8 +74,9 @@ export const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    if (currentUser) {
-      const calculatedMatches = MOCK_USERS.map((user) => {
+    if (currentUser && selectedEvent) {
+      const eventUsers = MOCK_USERS.filter(user => user.eventId === selectedEvent);
+      const calculatedMatches = eventUsers.map((user) => {
         const skillsMatch = user.skills.filter((skill) => 
           currentUser.interests.includes(skill)
         ).length;
@@ -66,7 +89,7 @@ export const Dashboard = () => {
 
       setMatches(calculatedMatches.sort((a, b) => b.score - a.score));
     }
-  }, [currentUser]);
+  }, [currentUser, selectedEvent]);
 
   const handleConnect = (user: User) => {
     if (!sentRequests.includes(user.email)) {
@@ -86,6 +109,22 @@ export const Dashboard = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold mb-2">Select Event</h2>
+        <Select value={selectedEvent} onValueChange={setSelectedEvent}>
+          <SelectTrigger className="w-[300px]">
+            <SelectValue placeholder="Select an event" />
+          </SelectTrigger>
+          <SelectContent>
+            {MOCK_EVENTS.map((event) => (
+              <SelectItem key={event.id} value={event.id}>
+                {event.name} - {new Date(event.date).toLocaleDateString()}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <h1 className="text-3xl font-bold mb-6">Your Matches</h1>
       <div className="space-y-4">
         {matches.map(({ user, score }) => (
@@ -146,6 +185,12 @@ export const Dashboard = () => {
             <DialogTitle>{selectedUser?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {selectedUser?.linkedinProfile && (
+              <div>
+                <h3 className="font-semibold mb-2">LinkedIn Profile:</h3>
+                <p className="text-sm text-gray-600">{selectedUser.linkedinProfile}</p>
+              </div>
+            )}
             <div>
               <h3 className="font-semibold mb-2">All Skills:</h3>
               <div className="flex flex-wrap gap-2">
