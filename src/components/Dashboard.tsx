@@ -1,15 +1,8 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { EventSelector } from "./EventSelector";
+import { UserMatchCard } from "./UserMatchCard";
+import { UserProfileDialog } from "./UserProfileDialog";
 
 interface User {
   name: string;
@@ -109,123 +102,34 @@ export const Dashboard = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold mb-2">Select Event</h2>
-        <Select value={selectedEvent} onValueChange={setSelectedEvent}>
-          <SelectTrigger className="w-[300px]">
-            <SelectValue placeholder="Select an event" />
-          </SelectTrigger>
-          <SelectContent>
-            {MOCK_EVENTS.map((event) => (
-              <SelectItem key={event.id} value={event.id}>
-                {event.name} - {new Date(event.date).toLocaleDateString()}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <EventSelector
+        events={MOCK_EVENTS}
+        selectedEvent={selectedEvent}
+        onEventChange={setSelectedEvent}
+      />
 
       <h1 className="text-3xl font-bold mb-6">Your Matches</h1>
       <div className="space-y-4">
         {matches.map(({ user, score }) => (
-          <Card key={user.email} className="hover:shadow-lg transition-shadow">
-            <CardHeader>
-              <CardTitle className="flex justify-between items-center">
-                <span 
-                  className="cursor-pointer hover:text-primary"
-                  onClick={() => setSelectedUser(user)}
-                >
-                  {user.name}
-                </span>
-                <Badge variant="secondary">{score.toFixed(0)}% Match</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <h3 className="font-semibold mb-2">Skills you're interested in:</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {user.skills
-                      .filter((skill) => currentUser.interests.includes(skill))
-                      .map((skill) => (
-                        <Badge key={skill} variant="default">
-                          {skill}
-                        </Badge>
-                      ))}
-                  </div>
-                </div>
-                <div>
-                  <h3 className="font-semibold mb-2">Interested in your skills:</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {user.interests
-                      .filter((interest) => currentUser.skills.includes(interest))
-                      .map((interest) => (
-                        <Badge key={interest} variant="secondary">
-                          {interest}
-                        </Badge>
-                      ))}
-                  </div>
-                </div>
-                <Button
-                  onClick={() => handleConnect(user)}
-                  disabled={sentRequests.includes(user.email)}
-                  className="w-full mt-4"
-                >
-                  {sentRequests.includes(user.email) ? "Request Sent" : "Connect"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <UserMatchCard
+            key={user.email}
+            user={user}
+            score={score}
+            currentUserSkills={currentUser.skills}
+            currentUserInterests={currentUser.interests}
+            onConnect={handleConnect}
+            onViewProfile={setSelectedUser}
+            isRequestSent={sentRequests.includes(user.email)}
+          />
         ))}
       </div>
 
-      <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>{selectedUser?.name}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {selectedUser?.linkedinProfile && (
-              <div>
-                <h3 className="font-semibold mb-2">LinkedIn Profile:</h3>
-                <p className="text-sm text-gray-600">{selectedUser.linkedinProfile}</p>
-              </div>
-            )}
-            <div>
-              <h3 className="font-semibold mb-2">All Skills:</h3>
-              <div className="flex flex-wrap gap-2">
-                {selectedUser?.skills.map((skill) => (
-                  <Badge key={skill} variant="default">
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h3 className="font-semibold mb-2">All Interests:</h3>
-              <div className="flex flex-wrap gap-2">
-                {selectedUser?.interests.map((interest) => (
-                  <Badge key={interest} variant="secondary">
-                    {interest}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <Button
-              onClick={() => {
-                if (selectedUser) handleConnect(selectedUser);
-                setSelectedUser(null);
-              }}
-              disabled={selectedUser ? sentRequests.includes(selectedUser.email) : false}
-              className="w-full mt-4"
-            >
-              {selectedUser && sentRequests.includes(selectedUser.email) 
-                ? "Request Sent" 
-                : "Connect"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <UserProfileDialog
+        user={selectedUser}
+        onClose={() => setSelectedUser(null)}
+        onConnect={handleConnect}
+        isRequestSent={selectedUser ? sentRequests.includes(selectedUser.email) : false}
+      />
     </div>
   );
 };
